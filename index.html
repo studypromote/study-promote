@@ -2100,5 +2100,175 @@ openPage = function(id) {
  boot();
 
 </script>
+さ
+<!-- STUDY PROMOTE：利用規約・プライバシーポリシー -->
+<style>
+#sp-legal {
+  margin: 24px 12px 90px;
+  padding: 18px;
+  border: 1px solid #393044;
+  border-radius: 16px;
+  background: #15111d;
+  color: #eee8f5;
+  font-size: 13px;
+}
+#sp-legal h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+#sp-legal .sp-legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+#sp-legal button {
+  border: 1px solid #7652a5;
+  background: #241a32;
+  color: #eee8f5;
+  padding: 10px 13px;
+  border-radius: 9px;
+  font-size: 13px;
+}
+#sp-legal a {
+  color: #c9a5ff;
+}
+#sp-legal-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0,0,0,.8);
+  padding: 18px 12px;
+  overflow-y: auto;
+}
+#sp-legal-modal .sp-legal-content {
+  max-width: 620px;
+  margin: 25px auto;
+  padding: 20px;
+  border: 1px solid #7652a5;
+  border-radius: 16px;
+  background: #17121f;
+  color: #eee8f5;
+  line-height: 1.8;
+  white-space: normal;
+}
+#sp-legal-modal h2 {
+  font-size: 20px;
+}
+#sp-legal-modal h3 {
+  font-size: 15px;
+  margin-top: 22px;
+}
+#sp-legal-modal p {
+  font-size: 13px;
+}
+#sp-legal-modal .sp-close {
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px;
+  border: 0;
+  border-radius: 9px;
+  background: #7652a5;
+  color: white;
+}
+</style>
+
+<section id="sp-legal">
+  <h3>STUDY PROMOTEについて</h3>
+  <div class="sp-legal-links">
+    <button type="button" onclick="spOpenLegal('terms')">利用規約</button>
+    <button type="button" onclick="spOpenLegal('privacy')">プライバシーポリシー</button>
+    <button type="button" onclick="spOpenLegal('contact')">お問い合わせ</button>
+  </div>
+</section>
+
+<div id="sp-legal-modal" role="dialog" aria-modal="true">
+  <div class="sp-legal-content">
+    <div id="sp-legal-body"></div>
+    <button class="sp-close" type="button" onclick="spCloseLegal()">閉じる</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const body = document.getElementById('sp-legal-body');
+  const modal = document.getElementById('sp-legal-modal');
+
+  const pages = {
+    terms: `
+      <h2>利用規約</h2>
+      <p>制定日：2026年11月16日</p>
+      <p>本規約は、STUDY PROMOTE（以下「本サービス」）の利用条件を定めるものです。</p>
+      <h3>第1条 サービス内容</h3>
+      <p>本サービスは、学習時間の記録、学習計画、タスク管理、教材管理、ランキング、投稿、コメント、友達機能、メッセージ機能等を提供します。</p>
+      <h3>第2条 利用上の注意</h3>
+      <p>利用者は、法令および本規約を守り、他の利用者に配慮して利用してください。</p>
+      <h3>第3条 禁止事項</h3>
+      <p>他人への嫌がらせ、誹謗中傷、脅迫、差別、なりすまし、個人情報の無断公開、勧誘、違法行為、サービス運営を妨害する行為を禁止します。</p>
+      <p>氏名、住所、電話番号、学校名、SNSアカウント等の個人情報を投稿しないでください。</p>
+      <h3>第4条 プロフィールと投稿</h3>
+      <p>プロフィールの公開は利用者自身が設定します。公開設定にした情報は、他の利用者に表示される場合があります。投稿やコメント等は、他の利用者に閲覧される場合があります。</p>
+      <h3>第5条 メッセージ・ブロック・通報</h3>
+      <p>メッセージ機能は友達として承認した相手との間で利用できます。不適切な利用者はブロックまたは通報してください。通報内容は運営者が確認し、必要に応じて対応します。</p>
+      <h3>第6条 未成年者の利用</h3>
+      <p>未成年の利用者は、保護者に本サービスの内容を説明し、必要な同意を得たうえで利用してください。</p>
+      <h3>第7条 サービスの変更・停止</h3>
+      <p>運営者は、保守、障害、安全確保その他の事情により、サービスの内容を変更または停止する場合があります。</p>
+      <h3>第8条 免責</h3>
+      <p>本サービスは学習成果、成績、進学等を保証するものではありません。運営者は、法令上認められる範囲で責任を負うものとします。</p>
+      <h3>第9条 規約の変更</h3>
+      <p>必要に応じて本規約を変更する場合があります。重要な変更はサービス内でお知らせします。</p>
+      <h3>第10条 運営者・お問い合わせ</h3>
+      <p>運営者：zn</p>
+      <p>メール：sutadipuromoto@gmail.com</p>
+    `,
+    privacy: `
+      <h2>プライバシーポリシー</h2>
+      <p>制定日：2026年11月16日</p>
+      <p>STUDY PROMOTE運営者（zn）は、利用者の情報を適切に取り扱うよう努めます。</p>
+      <h3>第1条 取得する情報</h3>
+      <p>メールアドレス、ユーザーID、ニックネーム、学年、学習記録、学習計画、タスク、教材情報、投稿、コメント、いいね、友達申請、メッセージ、ブロック・通報情報、およびサービス利用に伴う技術情報等を取得する場合があります。</p>
+      <h3>第2条 利用目的</h3>
+      <p>アカウント管理、本人認証、学習記録の保存・同期、ランキング、コミュニティ機能の提供、安全管理、問い合わせ対応、サービス改善のために利用します。</p>
+      <h3>第3条 情報の公開範囲</h3>
+      <p>プロフィールやランキングは公開設定に応じて表示されます。投稿・コメント等は他の利用者に表示される場合があります。ダイレクトメッセージは送信者と受信者の間で利用されます。</p>
+      <h3>第4条 外部サービス</h3>
+      <p>本サービスでは、認証・データ保存・ウェブサイト配信等のためにSupabase、GitHub Pages、jsDelivr等の外部サービスを利用しています。各サービスの提供者が、その提供に必要な情報を取り扱う場合があります。</p>
+      <h3>第5条 安全管理</h3>
+      <p>情報への不正アクセス、漏えい、改ざん等を防ぐため、合理的な安全管理に努めます。</p>
+      <h3>第6条 保存と削除</h3>
+      <p>利用者から情報の確認・訂正・削除等の申し出があった場合、本人確認のうえ、法令およびサービス運営上必要な範囲で対応します。</p>
+      <h3>第7条 ポリシーの変更</h3>
+      <p>必要に応じて本ポリシーを変更する場合があります。変更内容はサービス内等でお知らせします。</p>
+      <h3>第8条 お問い合わせ</h3>
+      <p>運営者：zn</p>
+      <p>メール：sutadipuromoto@gmail.com</p>
+    `,
+    contact: `
+      <h2>お問い合わせ</h2>
+      <p>STUDY PROMOTEに関するご質問、不具合の報告、個人情報に関するご相談はこちらからご連絡ください。</p>
+      <p>運営者：zn</p>
+      <p><a href="mailto:sutadipuromoto@gmail.com">sutadipuromoto@gmail.com</a></p>
+      <p>お問い合わせの際は、パスワードや認証コードを送らないでください。</p>
+    `
+  };
+
+  window.spOpenLegal = function(page){
+    if(!pages[page]) return;
+    body.innerHTML = pages[page];
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.spCloseLegal = function(){
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  };
+
+  modal.addEventListener('click', function(event){
+    if(event.target === modal) window.spCloseLegal();
+  });
+})();
+</script>
 </body>
 </html>
