@@ -265,5 +265,35 @@ async function testSupabase() {
   }
 }
 </script>
+<div id="auth-screen" style="
+  max-width: 400px;
+  margin: 30px auto;
+  padding: 24px;
+  background: #171321;
+  border: 1px solid #7040a0;
+  border-radius: 16px;
+  color: white;
+">
+  <h2 style="color:#b78cff;">STUDY PROMOTE</h2>
+  <p>アカウントにログイン</p>
+
+  <input id="auth-email" type="email"
+    placeholder="メールアドレス"
+    style="width:100%;padding:12px;margin:8px 0;box-sizing:border-box;">
+
+  <input id="auth-password" type="password"
+    placeholder="パスワード"
+    style="width:100%;padding:12px;margin:8px 0;box-sizing:border-box;">
+
+  <button onclick="signUp()" style="width:100%;padding:12px;margin-top:12px;background:#7040a0;color:white;border:0;border-radius:8px;">
+    新規登録
+  </button>
+
+  <button onclick="signIn()" style="width:100%;padding:12px;margin-top:8px;background:#292039;color:white;border:1px solid #7040a0;border-radius:8px;">
+    ログイン
+  </button>
+
+  <p id="auth-message"></p>
+</div>
 </body>
 </html>
