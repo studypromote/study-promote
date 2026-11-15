@@ -836,8 +836,1268 @@ startApp = async function() {
     showTutorial();
   }
 };
+/* ==========================================
+   STUDY PROMOTE COMMUNITY
+   PART 1/4
+========================================== */
 
-boot();
+(() => {
+"use strict";
+
+const css = document.createElement("style");
+css.textContent = `
+.community-tabs{display:flex;gap:7px;overflow-x:auto;margin:15px 0}
+.community-tabs button{white-space:nowrap;flex-shrink:0}
+.community-panel{display:none}
+.community-panel.active{display:block}
+.community-note{font-size:11px;color:var(--muted);line-height:1.8}
+.community-item{padding:14px 0;border-bottom:1px solid var(--line)}
+.community-meta{font-size:10px;color:var(--muted);margin:6px 0}
+.community-body{font-size:13px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
+.community-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.community-actions button{font-size:11px}
+.community-reply{margin:10px 0 0 12px;padding:10px;border-left:2px solid var(--purple);background:var(--surface2);border-radius:0 10px 10px 0}
+.community-user{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:12px 0;border-bottom:1px solid var(--line)}
+.community-user:last-child{border-bottom:0}
+.community-user-name{font-size:13px;font-weight:700}
+.community-user-sub{font-size:10px;color:var(--muted);margin-top:4px}
+.community-field{width:100%;min-height:100px;background:#0f0c16;border:1px solid var(--line);color:white;border-radius:11px;padding:13px;font:inherit;resize:vertical}
+.community-message{max-width:85%;padding:10px 12px;border-radius:13px;background:#30243f;margin:8px 0;font-size:12px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+.community-message.mine{margin-left:auto;background:#57348a}
+.community-chat-log{max-height:350px;overflow:auto}
+.community-inline{display:flex;gap:8px;align-items:center}
+.community-inline input{min-width:0;flex:1}
+.community-rank{font-size:14px;font-weight:900;color:#d4b5ff;min-width:27px}
+.community-small{font-size:10px;color:var(--muted)}
+.community-empty{padding:18px 4px;text-align:center;color:var(--muted);font-size:12px}
+.nav button[data-page="community"]{font-size:10px}
+`;
+document.head.appendChild(css);
+
+/* コミュニティ画面 */
+const main = document.querySelector("main");
+const nav = document.querySelector(".nav");
+
+if (!main || !nav || document.getElementById("community")) {
+  console.warn("Community UI could not be initialized.");
+  return;
+}
+
+const page = document.createElement("section");
+page.id = "community";
+page.className = "page";
+
+page.innerHTML = `
+  <div class="eyebrow">STUDY COMMUNITY</div>
+  <h1>コミュニティ</h1>
+  <p class="community-note">
+    勉強を頑張る仲間と交流しよう。氏名・住所・学校名・連絡先などの個人情報は投稿しないでください。
+    不快な相手はブロックできます。
+  </p>
+
+  <div class="community-tabs">
+    <button class="primary" data-ctab="ranking">ランキング</button>
+    <button class="secondary" data-ctab="board">掲示板</button>
+    <button class="secondary" data-ctab="friends">友達</button>
+    <button class="secondary" data-ctab="messages">DM</button>
+  </div>
+
+  <div id="community-ranking" class="community-panel active">
+    <div class="card">
+      <h3>週間勉強時間ランキング</h3>
+      <p class="community-note">
+        参加をONにすると、ニックネーム・学年・直近7日間の合計学習時間が公開されます。
+        個別の学習記録や学習内容は公開されません。
+      </p>
+      <label style="display:flex;align-items:center;gap:9px;margin:14px 0">
+        <input id="community-public" type="checkbox" style="width:20px;margin:0;accent-color:var(--purple)">
+        ランキングに参加する
+      </label>
+      <button class="primary full" onclick="communitySaveVisibility()">公開設定を保存</button>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <h3>TOP 100</h3>
+        <button class="secondary" onclick="communityLoadRanking()">更新</button>
+      </div>
+      <div id="community-ranking-list">
+        <div class="community-empty">読み込み中…</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="community-board" class="community-panel">
+    <div class="card">
+      <h3>質問・投稿する</h3>
+      <label>タイトル</label>
+      <input id="community-post-title" maxlength="100" placeholder="質問のタイトル">
+      <label>内容</label>
+      <textarea id="community-post-body" class="community-field" maxlength="3000" placeholder="質問や勉強の工夫を書こう"></textarea>
+      <button class="primary full" onclick="communityCreatePost()">投稿する</button>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <h3>みんなの投稿</h3>
+        <button class="secondary" onclick="communityLoadBoard()">更新</button>
+      </div>
+      <div id="community-post-list">
+        <div class="community-empty">読み込み中…</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="community-friends" class="community-panel">
+    <div class="card">
+      <h3>ユーザーを検索</h3>
+      <p class="community-note">ランキング公開を許可しているユーザーを検索できます。</p>
+      <div class="community-inline">
+        <input id="community-search" maxlength="40" placeholder="ニックネーム">
+        <button class="primary" onclick="communitySearchUsers()">検索</button>
+      </div>
+      <div id="community-search-results"></div>
+    </div>
+    <div class="card">
+      <h3>届いた友達申請</h3>
+      <div id="community-incoming"></div>
+    </div>
+    <div class="card">
+      <h3>送った友達申請</h3>
+      <div id="community-outgoing"></div>
+    </div>
+    <div class="card">
+      <h3>友達</h3>
+      <div id="community-friend-list"></div>
+    </div>
+    <div class="card">
+      <h3>ブロック中</h3>
+      <div id="community-block-list"></div>
+    </div>
+  </div>
+
+  <div id="community-messages" class="community-panel">
+    <div class="card">
+      <h3>友達とのメッセージ</h3>
+      <p class="community-note">承認済みの友達とのみメッセージを送受信できます。</p>
+      <div id="community-chat-friends"></div>
+    </div>
+    <div class="card" id="community-chat-card" style="display:none">
+      <div class="card-head">
+        <h3 id="community-chat-title">チャット</h3>
+        <button class="secondary" onclick="communityCloseChat()">閉じる</button>
+      </div>
+      <div id="community-chat-log" class="community-chat-log"></div>
+      <div class="community-inline" style="margin-top:12px">
+        <input id="community-message-input" maxlength="2000" placeholder="メッセージ">
+        <button class="primary" onclick="communitySendMessage()">送信</button>
+      </div>
+    </div>
+  </div>
+`;
+
+main.insertBefore(page, document.getElementById("profile"));
+
+/* ナビゲーションに追加 */
+const navButton = document.createElement("button");
+navButton.dataset.page = "community";
+navButton.innerHTML = '<span class="symbol">◎</span>交流';
+navButton.onclick = () => openPage("community");
+nav.insertBefore(navButton, nav.querySelector('[data-page="profile"]'));
+
+/* 共通処理 */
+let communityTabNow = "ranking";
+let communityChatUser = null;
+let communityFriendIds = [];
+
+const cEsc = value => esc(value);
+
+const cNotifyError = (label,error) => {
+  console.error(label,error);
+  notify(label + "：" + (error?.message || "エラー"));
+};
+
+const cName = profile =>
+  profile?.nickname?.trim() || "ユーザー";
+
+const cDate = value => {
+  try {
+    return new Date(value).toLocaleString("ja-JP",{
+      month:"numeric",
+      day:"numeric",
+      hour:"2-digit",
+      minute:"2-digit"
+    });
+  } catch {
+    return "";
+  }
+};
+
+async function cProfiles(ids) {
+  const unique = [...new Set((ids || []).filter(Boolean))];
+  if (!unique.length) return {};
+
+  const {data,error} = await client
+    .from("community_profiles")
+    .select("id,nickname,grade,is_public")
+    .in("id",unique);
+
+  if (error) throw error;
+
+  return Object.fromEntries(
+    (data || []).map(p => [p.id,p])
+  );
+}
+
+async function cBlockedIds() {
+  const {data,error} = await client
+    .from("user_blocks")
+    .select("blocked_id")
+    .eq("blocker_id",user.id);
+
+  if (error) throw error;
+
+  return new Set((data || []).map(x => x.blocked_id));
+}
+
+async function cIsBlocked(otherId) {
+  const blocked = await cBlockedIds();
+  return blocked.has(otherId);
+}
+
+/* タブ切り替え */
+window.communityTab = async tab => {
+  communityTabNow = tab;
+
+  ["ranking","board","friends","messages"].forEach(name => {
+    const panel = el("community-"+name);
+    panel.classList.toggle("active",name===tab);
+
+    const button = document.querySelector(`[data-ctab="${name}"]`);
+    button.className = name===tab ? "primary" : "secondary";
+  });
+
+  try {
+    if (tab==="ranking") await communityLoadRanking();
+    if (tab==="board") await communityLoadBoard();
+    if (tab==="friends") await communityLoadFriends();
+    if (tab==="messages") await communityLoadChatFriends();
+  } catch(error) {
+    cNotifyError("コミュニティを読み込めません",error);
+  }
+};
+
+document.querySelectorAll("[data-ctab]").forEach(button => {
+  button.addEventListener("click",() => {
+    communityTab(button.dataset.ctab);
+  });
+});
+
+/* 公開設定 */
+window.communitySaveVisibility = async () => {
+  if (!user) return;
+
+  const nickname = el("nickname").value.trim();
+  const grade = el("grade").value;
+  const is_public = el("community-public").checked;
+
+  if (!nickname) {
+    notify("先にマイページでニックネームを設定してください");
+    return;
+  }
+
+  const {error} = await client
+    .from("community_profiles")
+    .upsert({
+      id:user.id,
+      nickname,
+      grade,
+      is_public
+    });
+
+  if (error) {
+    cNotifyError("公開設定を保存できません",error);
+    return;
+  }
+
+  notify("公開設定を保存しました");
+  await communityLoadRanking();
+};
+
+/* ランキング */
+window.communityLoadRanking = async () => {
+  if (!user) return;
+
+  const {data:profile,error:profileError} = await client
+    .from("community_profiles")
+    .select("is_public")
+    .eq("id",user.id)
+    .maybeSingle();
+
+  if (profileError) throw profileError;
+
+  el("community-public").checked = !!profile?.is_public;
+
+  const {data,error} = await client.rpc("get_weekly_study_leaderboard");
+
+  if (error) throw error;
+
+  const list = el("community-ranking-list");
+
+  if (!data?.length) {
+    list.innerHTML = '<div class="community-empty">公開参加者はまだいません。</div>';
+    return;
+  }
+
+  list.innerHTML = data.map((row,index) => {
+    const minutes = Number(row.total_minutes)||0;
+    return `
+      <div class="community-user">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="community-rank">${index+1}</span>
+          <div>
+            <div class="community-user-name">${cEsc(row.nickname)}</div>
+            <div class="community-user-sub">${cEsc(row.grade||"学年未設定")}</div>
+          </div>
+        </div>
+        <span class="badge">${Math.floor(minutes/60)}時間${minutes%60}分</span>
+      </div>
+    `;
+  }).join("");
+};
+/* ==========================================
+   STUDY PROMOTE COMMUNITY
+   PART 2/4
+   掲示板・コメント・いいね・通報
+========================================== */
+
+/* 投稿一覧 */
+window.communityLoadBoard = async () => {
+  if (!user) return;
+
+  const list = el("community-post-list");
+  list.innerHTML = '<div class="community-empty">読み込み中…</div>';
+
+  const {data:posts,error} = await client
+    .from("community_posts")
+    .select("*")
+    .order("created_at",{ascending:false})
+    .limit(50);
+
+  if (error) throw error;
+
+  if (!posts?.length) {
+    list.innerHTML = '<div class="community-empty">まだ投稿はありません。最初の質問を投稿してみよう。</div>';
+    return;
+  }
+
+  const ids = posts.map(p => p.user_id);
+  const profiles = await cProfiles(ids);
+
+  const postIds = posts.map(p => p.id);
+
+  const {data:likes,error:likeError} = await client
+    .from("community_likes")
+    .select("post_id,user_id")
+    .in("post_id",postIds);
+
+  if (likeError) throw likeError;
+
+  const {data:comments,error:commentError} = await client
+    .from("community_comments")
+    .select("*")
+    .in("post_id",postIds)
+    .order("created_at",{ascending:true});
+
+  if (commentError) throw commentError;
+
+  const commentProfiles = await cProfiles(
+    (comments||[]).map(c => c.user_id)
+  );
+
+  const blocked = await cBlockedIds();
+
+  list.innerHTML = posts.map(post => {
+    if (blocked.has(post.user_id)) return "";
+
+    const profile = profiles[post.user_id];
+    const postLikes = (likes||[]).filter(x => x.post_id===post.id);
+    const liked = postLikes.some(x => x.user_id===user.id);
+    const postComments = (comments||[]).filter(x => x.post_id===post.id);
+
+    return `
+      <div class="community-item">
+        <div class="community-user-name">${cEsc(cName(profile))}</div>
+        <div class="community-meta">
+          ${cEsc(profile?.grade||"学年未設定")} ・ ${cDate(post.created_at)}
+        </div>
+
+        <h3 style="margin:10px 0 7px">${cEsc(post.title)}</h3>
+        <div class="community-body">${cEsc(post.body)}</div>
+
+        <div class="community-actions">
+          <button class="secondary"
+            onclick="communityToggleLike('${post.id}',${liked})">
+            ${liked?"♥ いいね済み":"♡ いいね"} ${postLikes.length}
+          </button>
+
+          <button class="secondary"
+            onclick="communityToggleComment('${post.id}')">
+            コメント ${postComments.length}
+          </button>
+
+          ${post.user_id===user.id?`
+            <button class="danger"
+              onclick="communityDeletePost('${post.id}')">
+              削除
+            </button>
+          `:`
+            <button class="danger"
+              onclick="communityReportPost('${post.id}','${post.user_id}')">
+              通報
+            </button>
+            <button class="danger"
+              onclick="communityBlockUser('${post.user_id}')">
+              ブロック
+            </button>
+          `}
+        </div>
+
+        <div id="community-comments-${post.id}" style="display:none">
+          ${postComments.map(comment=>`
+            <div class="community-reply">
+              <div class="community-user-name">
+                ${cEsc(cName(commentProfiles[comment.user_id]))}
+              </div>
+              <div class="community-meta">${cDate(comment.created_at)}</div>
+              <div class="community-body">${cEsc(comment.body)}</div>
+            </div>
+          `).join("")}
+
+          <div style="margin-top:12px">
+            <textarea
+              id="community-comment-input-${post.id}"
+              class="community-field"
+              maxlength="1000"
+              style="min-height:65px"
+              placeholder="コメントを書く">
+            </textarea>
+
+            <button class="primary full"
+              onclick="communityAddComment('${post.id}')">
+              コメントを送信
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("") || '<div class="community-empty">表示できる投稿はありません。</div>';
+};
+
+/* 投稿作成 */
+window.communityCreatePost = async () => {
+  if (!user) return;
+
+  const title = el("community-post-title").value.trim();
+  const body = el("community-post-body").value.trim();
+
+  if (!title || !body) {
+    notify("タイトルと内容を入力してください");
+    return;
+  }
+
+  if (title.length>100 || body.length>3000) {
+    notify("文字数を確認してください");
+    return;
+  }
+
+  const {error} = await client
+    .from("community_posts")
+    .insert({
+      user_id:user.id,
+      title,
+      body
+    });
+
+  if (error) {
+    cNotifyError("投稿できませんでした",error);
+    return;
+  }
+
+  el("community-post-title").value="";
+  el("community-post-body").value="";
+
+  notify("投稿しました");
+  await communityLoadBoard();
+};
+
+/* コメント表示切り替え */
+window.communityToggleComment = postId => {
+  const box = el("community-comments-"+postId);
+  if (!box) return;
+
+  box.style.display =
+    box.style.display==="none" ? "block" : "none";
+};
+
+/* コメント追加 */
+window.communityAddComment = async postId => {
+  if (!user) return;
+
+  const input = el("community-comment-input-"+postId);
+  const body = input.value.trim();
+
+  if (!body) {
+    notify("コメントを入力してください");
+    return;
+  }
+
+  if (body.length>1000) {
+    notify("コメントは1000文字以内にしてください");
+    return;
+  }
+
+  const {error} = await client
+    .from("community_comments")
+    .insert({
+      post_id:postId,
+      user_id:user.id,
+      body
+    });
+
+  if (error) {
+    cNotifyError("コメントできませんでした",error);
+    return;
+  }
+
+  notify("コメントしました");
+  await communityLoadBoard();
+
+  const box = el("community-comments-"+postId);
+  if (box) box.style.display="block";
+};
+
+/* いいね */
+window.communityToggleLike = async (postId,alreadyLiked) => {
+  if (!user) return;
+
+  if (alreadyLiked) {
+    const {error} = await client
+      .from("community_likes")
+      .delete()
+      .eq("post_id",postId)
+      .eq("user_id",user.id);
+
+    if (error) {
+      cNotifyError("いいねを取り消せませんでした",error);
+      return;
+    }
+  } else {
+    const {error} = await client
+      .from("community_likes")
+      .insert({
+        post_id:postId,
+        user_id:user.id
+      });
+
+    if (error) {
+      cNotifyError("いいねできませんでした",error);
+      return;
+    }
+  }
+
+  await communityLoadBoard();
+};
+
+/* 自分の投稿削除 */
+window.communityDeletePost = async postId => {
+  if (!confirm("この投稿を削除しますか？")) return;
+
+  const {error} = await client
+    .from("community_posts")
+    .delete()
+    .eq("id",postId)
+    .eq("user_id",user.id);
+
+  if (error) {
+    cNotifyError("削除できませんでした",error);
+    return;
+  }
+
+  notify("投稿を削除しました");
+  await communityLoadBoard();
+};
+
+/* 通報 */
+window.communityReportPost = async (postId,reportedUserId) => {
+  const reason = prompt(
+    "通報理由を入力してください。\n例：嫌がらせ、不適切な内容、個人情報の掲載"
+  );
+
+  if (!reason?.trim()) return;
+
+  if (reason.length>500) {
+    notify("通報理由は500文字以内にしてください");
+    return;
+  }
+
+  const {error} = await client
+    .from("community_reports")
+    .insert({
+      reporter_id:user.id,
+      reported_user_id:reportedUserId,
+      post_id:postId,
+      reason:reason.trim()
+    });
+
+  if (error) {
+    cNotifyError("通報できませんでした",error);
+    return;
+  }
+
+  notify("通報を受け付けました");
+};
+
+/* ==========================================
+   PART 2/4 END
+========================================== */
+/* ==========================================
+   STUDY PROMOTE COMMUNITY
+   PART 3/4
+   友達・検索・申請・ブロック
+========================================== */
+
+/* ユーザー検索 */
+window.communitySearchUsers = async () => {
+  if (!user) return;
+
+  const keyword = el("community-search-input").value.trim();
+  const result = el("community-search-results");
+
+  if (keyword.length < 1) {
+    result.innerHTML =
+      '<div class="community-empty">ニックネームを入力してください。</div>';
+    return;
+  }
+
+  result.innerHTML = '<div class="community-empty">検索中…</div>';
+
+  const {data,error} = await client
+    .from("community_profiles")
+    .select("id,nickname,grade")
+    .eq("is_public",true)
+    .ilike("nickname","%"+keyword+"%")
+    .neq("id",user.id)
+    .limit(20);
+
+  if (error) {
+    cNotifyError("検索できませんでした",error);
+    return;
+  }
+
+  const blocked = await cBlockedIds();
+  const users = (data||[]).filter(x=>!blocked.has(x.id));
+
+  if (!users.length) {
+    result.innerHTML =
+      '<div class="community-empty">ユーザーが見つかりませんでした。</div>';
+    return;
+  }
+
+  result.innerHTML = users.map(p=>`
+    <div class="community-item">
+      <div class="community-user-name">${cEsc(cName(p))}</div>
+      <div class="community-meta">${cEsc(p.grade||"学年未設定")}</div>
+      <button class="primary full"
+        onclick="communitySendRequest('${p.id}')">
+        友達申請
+      </button>
+    </div>
+  `).join("");
+};
+
+/* 友達申請 */
+window.communitySendRequest = async otherId => {
+  if (!user || otherId===user.id) return;
+
+  const blocked = await cBlockedIds();
+  if (blocked.has(otherId)) {
+    notify("このユーザーには申請できません");
+    return;
+  }
+
+  const {data:existing,error:checkError} = await client
+    .from("friend_requests")
+    .select("id,status")
+    .or(
+      `and(sender_id.eq.${user.id},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${user.id})`
+    )
+    .limit(1);
+
+  if (checkError) {
+    cNotifyError("申請状況を確認できませんでした",checkError);
+    return;
+  }
+
+  if (existing?.length) {
+    notify("すでに申請済み、または友達です");
+    return;
+  }
+
+  const {error} = await client
+    .from("friend_requests")
+    .insert({
+      sender_id:user.id,
+      receiver_id:otherId,
+      status:"pending"
+    });
+
+  if (error) {
+    cNotifyError("友達申請できませんでした",error);
+    return;
+  }
+
+  notify("友達申請を送りました");
+};
+
+/* 友達・申請一覧 */
+window.communityLoadFriends = async () => {
+  if (!user) return;
+
+  const incomingEl = el("community-incoming");
+  const outgoingEl = el("community-outgoing");
+  const friendsEl = el("community-friends-list");
+
+  incomingEl.innerHTML = "読み込み中…";
+  outgoingEl.innerHTML = "読み込み中…";
+  friendsEl.innerHTML = "読み込み中…";
+
+  const [incomingResult,outgoingResult,acceptedA,acceptedB] =
+    await Promise.all([
+      client.from("friend_requests")
+        .select("*")
+        .eq("receiver_id",user.id)
+        .eq("status","pending")
+        .order("created_at",{ascending:false}),
+
+      client.from("friend_requests")
+        .select("*")
+        .eq("sender_id",user.id)
+        .eq("status","pending")
+        .order("created_at",{ascending:false}),
+
+      client.from("friend_requests")
+        .select("*")
+        .eq("sender_id",user.id)
+        .eq("status","accepted"),
+
+      client.from("friend_requests")
+        .select("*")
+        .eq("receiver_id",user.id)
+        .eq("status","accepted")
+    ]);
+
+  for (const r of [incomingResult,outgoingResult,acceptedA,acceptedB]) {
+    if (r.error) {
+      cNotifyError("友達一覧を取得できませんでした",r.error);
+      return;
+    }
+  }
+
+  const incoming = incomingResult.data||[];
+  const outgoing = outgoingResult.data||[];
+  const accepted = [
+    ...(acceptedA.data||[]),
+    ...(acceptedB.data||[])
+  ];
+
+  const blocked = await cBlockedIds();
+
+  const incomingIds = incoming.map(x=>x.sender_id);
+  const outgoingIds = outgoing.map(x=>x.receiver_id);
+  const friendIds = accepted.map(x=>
+    x.sender_id===user.id ? x.receiver_id : x.sender_id
+  );
+
+  const profiles = await cProfiles([
+    ...incomingIds,
+    ...outgoingIds,
+    ...friendIds
+  ]);
+
+  communityFriendIds = [...new Set(friendIds)]
+    .filter(id=>!blocked.has(id));
+
+  incomingEl.innerHTML = incoming.length
+    ? incoming.filter(x=>!blocked.has(x.sender_id)).map(x=>`
+      <div class="community-item">
+        <strong>${cEsc(cName(profiles[x.sender_id]))}</strong>
+        <div class="community-actions">
+          <button class="primary"
+            onclick="communityRespondRequest('${x.id}','accepted')">
+            承認
+          </button>
+          <button class="danger"
+            onclick="communityRespondRequest('${x.id}','rejected')">
+            拒否
+          </button>
+        </div>
+      </div>
+    `).join("")
+    : '<div class="community-empty">届いている申請はありません。</div>';
+
+  outgoingEl.innerHTML = outgoing.length
+    ? outgoing.filter(x=>!blocked.has(x.receiver_id)).map(x=>`
+      <div class="community-item">
+        ${cEsc(cName(profiles[x.receiver_id]))}
+        <div class="community-meta">申請中</div>
+      </div>
+    `).join("")
+    : '<div class="community-empty">送信中の申請はありません。</div>';
+
+  friendsEl.innerHTML = communityFriendIds.length
+    ? communityFriendIds.map(id=>`
+      <div class="community-item">
+        <strong>${cEsc(cName(profiles[id]))}</strong>
+        <div class="community-actions">
+          <button class="primary"
+            onclick="communityOpenChat('${id}')">
+            チャット
+          </button>
+          <button class="danger"
+            onclick="communityBlockUser('${id}')">
+            ブロック
+          </button>
+        </div>
+      </div>
+    `).join("")
+    : '<div class="community-empty">まだ友達はいません。</div>';
+
+  await communityLoadBlocked();
+};
+
+/* 申請への返答 */
+window.communityRespondRequest = async (requestId,status) => {
+  if (!["accepted","rejected"].includes(status)) return;
+
+  const {error} = await client
+    .from("friend_requests")
+    .update({status,updated_at:new Date().toISOString()})
+    .eq("id",requestId)
+    .eq("receiver_id",user.id)
+    .eq("status","pending");
+
+  if (error) {
+    cNotifyError("申請を更新できませんでした",error);
+    return;
+  }
+
+  notify(status==="accepted"?"友達になりました":"申請を拒否しました");
+  await communityLoadFriends();
+};
+
+/* ブロック */
+window.communityBlockUser = async otherId => {
+  if (!user || otherId===user.id) return;
+
+  if (!confirm("このユーザーをブロックしますか？")) return;
+
+  const {error} = await client
+    .from("user_blocks")
+    .insert({
+      blocker_id:user.id,
+      blocked_id:otherId
+    });
+
+  if (error && !String(error.message||"").toLowerCase().includes("duplicate")) {
+    cNotifyError("ブロックできませんでした",error);
+    return;
+  }
+
+  notify("ユーザーをブロックしました");
+  await communityLoadFriends();
+  await communityLoadBoard();
+};
+
+/* ブロック解除 */
+window.communityUnblockUser = async otherId => {
+  if (!confirm("ブロックを解除しますか？")) return;
+
+  const {error} = await client
+    .from("user_blocks")
+    .delete()
+    .eq("blocker_id",user.id)
+    .eq("blocked_id",otherId);
+
+  if (error) {
+    cNotifyError("ブロックを解除できませんでした",error);
+    return;
+  }
+
+  notify("ブロックを解除しました");
+  await communityLoadBlocked();
+};
+
+/* ブロック一覧 */
+window.communityLoadBlocked = async () => {
+  if (!user) return;
+
+  const target = el("community-blocked-list");
+
+  const {data,error} = await client
+    .from("user_blocks")
+    .select("blocked_id")
+    .eq("blocker_id",user.id);
+
+  if (error) {
+    cNotifyError("ブロック一覧を取得できませんでした",error);
+    return;
+  }
+
+  const ids = (data||[]).map(x=>x.blocked_id);
+  const profiles = await cProfiles(ids);
+
+  target.innerHTML = ids.length
+    ? ids.map(id=>`
+      <div class="community-item">
+        ${cEsc(cName(profiles[id]))}
+        <button class="secondary full"
+          onclick="communityUnblockUser('${id}')">
+          ブロック解除
+        </button>
+      </div>
+    `).join("")
+    : '<div class="community-empty">ブロック中のユーザーはいません。</div>';
+};
+
+/* ==========================================
+   PART 3/4 END
+========================================== */
+/* ==========================================
+   STUDY PROMOTE COMMUNITY
+   PART 4/4
+   チャット・本体接続
+========================================== */
+
+/* チャット画面の準備 */
+window.communityEnsureChatUI = () => {
+  let root = document.getElementById("community-chat-root");
+  if (root) return root;
+
+  const panel =
+    document.getElementById("community-panel-messages") ||
+    document.querySelector('[data-community-panel="messages"]');
+
+  if (!panel) {
+    console.error("チャット画面の表示領域が見つかりません");
+    return null;
+  }
+
+  root = document.createElement("div");
+  root.id = "community-chat-root";
+
+  root.innerHTML = `
+    <div class="community-item">
+      <h3>友達とのチャット</h3>
+      <p class="community-meta">
+        承認済みの友達とだけメッセージを送受信できます。
+      </p>
+      <div id="community-chat-friend-list"></div>
+    </div>
+
+    <div id="community-chat-window" class="community-item"
+      style="display:none">
+      <div class="community-actions">
+        <strong id="community-chat-title">チャット</strong>
+        <button class="secondary"
+          onclick="communityCloseChat()">閉じる</button>
+      </div>
+
+      <div id="community-chat-messages"
+        style="max-height:350px;overflow-y:auto;margin:12px 0">
+      </div>
+
+      <textarea id="community-chat-input"
+        class="community-field"
+        maxlength="2000"
+        style="min-height:65px"
+        placeholder="メッセージを入力">
+      </textarea>
+
+      <button class="primary full"
+        onclick="communitySendMessage()">
+        メッセージを送信
+      </button>
+    </div>
+  `;
+
+  panel.appendChild(root);
+  return root;
+};
+
+/* チャット可能な友達一覧 */
+window.communityLoadChatFriends = async () => {
+  if (!user) return;
+
+  const root = communityEnsureChatUI();
+  if (!root) return;
+
+  const target = el("community-chat-friend-list");
+  target.innerHTML = "読み込み中…";
+
+  await communityLoadFriends();
+
+  const blocked = await cBlockedIds();
+  const ids = (communityFriendIds||[])
+    .filter(id=>!blocked.has(id));
+
+  const profiles = await cProfiles(ids);
+
+  target.innerHTML = ids.length
+    ? ids.map(id=>`
+      <div class="community-item">
+        <strong>${cEsc(cName(profiles[id]))}</strong>
+        <button class="primary full"
+          onclick="communityOpenChat('${id}')">
+          チャットを開く
+        </button>
+      </div>
+    `).join("")
+    : '<div class="community-empty">チャットできる友達はいません。</div>';
+};
+
+/* チャットを開く */
+window.communityOpenChat = async otherId => {
+  if (!user || !otherId || otherId===user.id) return;
+
+  await communityLoadFriends();
+
+  if (!(communityFriendIds||[]).includes(otherId)) {
+    notify("承認済みの友達のみチャットできます");
+    return;
+  }
+
+  if (await cIsBlocked(otherId)) {
+    notify("ブロック中のユーザーとはチャットできません");
+    return;
+  }
+
+  communityChatUser = otherId;
+
+  const profiles = await cProfiles([otherId]);
+  const profile = profiles[otherId];
+
+  el("community-chat-title").textContent =
+    cName(profile);
+
+  el("community-chat-window").style.display = "block";
+
+  await communityLoadMessages();
+
+  el("community-chat-window").scrollIntoView({
+    behavior:"smooth",
+    block:"start"
+  });
+};
+
+/* メッセージ一覧 */
+window.communityLoadMessages = async () => {
+  if (!user || !communityChatUser) return;
+
+  const target = el("community-chat-messages");
+  target.innerHTML = "読み込み中…";
+
+  const otherId = communityChatUser;
+
+  const filter =
+    `and(sender_id.eq.${user.id},receiver_id.eq.${otherId}),`+
+    `and(sender_id.eq.${otherId},receiver_id.eq.${user.id})`;
+
+  const {data,error} = await client
+    .from("direct_messages")
+    .select("*")
+    .or(filter)
+    .order("created_at",{ascending:true})
+    .limit(100);
+
+  if (error) {
+    cNotifyError("メッセージを取得できませんでした",error);
+    return;
+  }
+
+  target.innerHTML = (data||[]).length
+    ? data.map(message=>`
+      <div style="
+        display:flex;
+        justify-content:${message.sender_id===user.id?"flex-end":"flex-start"};
+        margin:8px 0">
+        <div style="
+          max-width:85%;
+          padding:10px 13px;
+          border-radius:13px;
+          background:${message.sender_id===user.id?"#39245a":"#211a2d"};
+          overflow-wrap:anywhere">
+          <div>${cEsc(message.body)}</div>
+          <div class="community-meta">
+            ${cDate(message.created_at)}
+          </div>
+        </div>
+      </div>
+    `).join("")
+    : '<div class="community-empty">メッセージはまだありません。</div>';
+
+  target.scrollTop = target.scrollHeight;
+};
+
+/* メッセージ送信 */
+window.communitySendMessage = async () => {
+  if (!user || !communityChatUser) return;
+
+  const input = el("community-chat-input");
+  const body = input.value.trim();
+
+  if (!body) {
+    notify("メッセージを入力してください");
+    return;
+  }
+
+  if (body.length>2000) {
+    notify("メッセージは2000文字以内にしてください");
+    return;
+  }
+
+  const otherId = communityChatUser;
+
+  await communityLoadFriends();
+
+  if (!(communityFriendIds||[]).includes(otherId)) {
+    notify("友達関係を確認できませんでした");
+    return;
+  }
+
+  if (await cIsBlocked(otherId)) {
+    notify("ブロック中のユーザーには送信できません");
+    return;
+  }
+
+  const {error} = await client
+    .from("direct_messages")
+    .insert({
+      sender_id:user.id,
+      receiver_id:otherId,
+      body
+    });
+
+  if (error) {
+    cNotifyError("メッセージを送信できませんでした",error);
+    return;
+  }
+
+  input.value="";
+  await communityLoadMessages();
+};
+
+/* チャットを閉じる */
+window.communityCloseChat = () => {
+  communityChatUser = null;
+
+  const windowEl = document.getElementById("community-chat-window");
+  if (windowEl) windowEl.style.display = "none";
+};
+
+/* コミュニティタブ切り替え時の読み込み */
+const communityOriginalTab = communityTab;
+
+communityTab = async function(tab) {
+  communityOriginalTab(tab);
+
+  try {
+    if (tab==="ranking") {
+      await communityLoadRanking();
+    }
+
+    if (tab==="board") {
+      await communityLoadBoard();
+    }
+
+    if (tab==="friends") {
+      await communityLoadFriends();
+    }
+
+    if (tab==="messages") {
+      await communityLoadChatFriends();
+    }
+  } catch(error) {
+    cNotifyError("コミュニティを読み込めませんでした",error);
+  }
+};
+
+/* ログイン後のプロフィール同期 */
+const communityOriginalStartApp = startApp;
+
+startApp = async function() {
+  await communityOriginalStartApp();
+
+  if (!user) return;
+
+  try {
+    const nickname =
+      el("nickname")?.value?.trim() || "ユーザー";
+
+    const grade =
+      el("grade")?.value || null;
+
+    const {data:existing,error:selectError} = await client
+      .from("community_profiles")
+      .select("id")
+      .eq("id",user.id)
+      .maybeSingle();
+
+    if (selectError) throw selectError;
+
+    if (existing) {
+      const {error:updateError} = await client
+        .from("community_profiles")
+        .update({
+          nickname,
+          grade,
+          updated_at:new Date().toISOString()
+        })
+        .eq("id",user.id);
+
+      if (updateError) throw updateError;
+    } else {
+      const {error:insertError} = await client
+        .from("community_profiles")
+        .insert({
+          id:user.id,
+          nickname,
+          grade,
+          is_public:false
+        });
+
+      if (insertError) throw insertError;
+    }
+  } catch(error) {
+    console.error("コミュニティプロフィール同期エラー:",error);
+  }
+};
+
+/* ページ切り替え時の処理 */
+const communityOriginalOpenPage = openPage;
+
+openPage = function(id) {
+  communityOriginalOpenPage(id);
+
+  if (id==="community") {
+    communityTab(communityTabNow);
+  }
+};
+
+/* ==========================================
+   PART 4/4 END
+========================================== */
+
+})();
+ boot();
 
 </script>
 </body>
