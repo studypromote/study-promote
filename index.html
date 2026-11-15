@@ -351,13 +351,29 @@ const notify=text=>{
 const dateLabel=d=>new Date(d+"T00:00:00").toLocaleDateString("ja-JP",{month:"numeric",day:"numeric",weekday:"short"});
 const minutesLabel=n=>`${Math.floor(n/60)}時間${n%60}分`;
 
-function openPage(id){
+async function openPage(id){
+ if(id==="admin"){
+  const {data,error}=await client.rpc("is_admin");
+
+  if(error||data!==true){
+   notify("管理者権限がありません。");
+   return;
+  }
+ }
+
  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
  el(id).classList.add("active");
- document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===id));
- window.scrollTo(0,0);
-}
 
+ document.querySelectorAll(".nav button").forEach(b=>
+  b.classList.toggle("active",b.dataset.page===id)
+ );
+
+ window.scrollTo(0,0);
+
+ if(id==="admin"){
+  await loadDeletionRequests();
+ }
+}
 async function login(){
  const email=el("email").value.trim(),password=el("password").value;
  if(!email||!password){el("auth-message").textContent="メールアドレスとパスワードを入力してください。";return;}
