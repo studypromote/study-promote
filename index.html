@@ -359,10 +359,15 @@ async function openPage(id){
  if(id==="admin"){
   const {data,error}=await client.rpc("is_admin");
 
-  if(error||data!==true){
-   notify("管理者権限がありません。");
-   return;
-  }
+  if(error){
+ notify("管理者確認エラー："+error.message);
+ return;
+}
+
+if(data!==true){
+ notify("管理者権限がありません。");
+ return;
+}
  }
 
  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
