@@ -2309,7 +2309,44 @@ openPage = function(id) {
 })();
 </script>
 <script>
-async function requestAccountDeletion() {
+async function loadDeletionRequests(){
+ const list=el("deletion-request-list");
+ list.innerHTML='<p class="small">読み込み中...</p>';
+
+ try{
+  const {data,isAdminError}=await client.rpc("is_admin");
+
+  if(isAdminError||data!==true){
+   list.innerHTML='<p class="small">管理者権限がありません。</p>';
+   return;
+  }
+
+  const {data:requests,error}=await client
+   .from("account_deletion_requests")
+   .select("id,user_id,status,requested_at")
+   .order("requested_at",{ascending:false});
+
+  if(error)throw error;
+
+  if(!requests||requests.length===0){
+   list.innerHTML='<p class="small">退会申請はありません。</p>';
+   return;
+  }
+
+  list.innerHTML=requests.map(r=>`
+   <div class="card" style="margin-top:12px;">
+    <strong>申請状況：${esc(r.status)}</strong>
+    <p class="small">ユーザーID：${esc(r.user_id)}</p>
+    <p class="small">申請日時：${new Date(r.requested_at).toLocaleString("ja-JP")}</p>
+   </div>
+  `).join("");
+
+ }catch(error){
+  console.error(error);
+  list.innerHTML='<p class="small">読み込みに失敗しました。</p>';
+ }
+}
+ async function requestAccountDeletion() {
   const confirmed = confirm(
     "退会を申請しますか？\n\n申請後、運営者が確認します。"
   );
