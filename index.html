@@ -249,5 +249,21 @@ const supabaseClient = supabase.createClient(
 
 console.log("Supabase client initialized");
 </script>
+<button onclick="testSupabase()">接続テスト</button>
+
+<script>
+async function testSupabase() {
+  const { data, error } = await supabaseClient
+    .from("study_tasks")
+    .select("id")
+    .limit(1);
+
+  if (error) {
+    alert("接続エラー: " + error.message);
+  } else {
+    alert("Supabaseとの通信成功！");
+  }
+}
+</script>
 </body>
 </html>
