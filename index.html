@@ -1,0 +1,241 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0c0a12">
+  <title>STUDY PROMOTE</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px 18px 100px;
+      background: #0c0a12;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 35px;
+    }
+
+    .logo {
+      font-size: 21px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .logo span {
+      color: #a970ff;
+    }
+
+    .date {
+      color: #a99bbd;
+      font-size: 12px;
+    }
+
+    h1 {
+      font-size: 27px;
+      margin: 10px 0;
+    }
+
+    .subtitle {
+      color: #a99bbd;
+      font-size: 14px;
+    }
+
+    .card {
+      background: #191423;
+      border: 1px solid #30243f;
+      border-radius: 18px;
+      padding: 20px;
+      margin-top: 22px;
+    }
+
+    .card-title {
+      color: #c7a3ff;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .progress {
+      height: 9px;
+      background: #382b49;
+      border-radius: 20px;
+      margin-top: 15px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: #a970ff;
+      transition: width .3s;
+    }
+
+    .task {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 15px 0;
+      border-bottom: 1px solid #30243f;
+      font-size: 14px;
+    }
+
+    .task input {
+      accent-color: #a970ff;
+      width: 18px;
+      height: 18px;
+    }
+
+    .timer {
+      font-size: 42px;
+      font-weight: bold;
+      text-align: center;
+      margin: 22px 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 13px 20px;
+      background: #9255e8;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .timer-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .secondary {
+      background: #30243f;
+    }
+
+    .bottom {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #15111e;
+      border-top: 1px solid #30243f;
+      display: flex;
+      justify-content: space-around;
+      padding: 16px 5px;
+      color: #b99add;
+      font-size: 11px;
+    }
+
+    .bottom div {
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">STUDY <span>PROMOTE</span></div>
+    <div>☰</div>
+  </header>
+
+  <div class="date">YOUR DAILY STUDY</div>
+  <h1>今日も一歩ずつ。</h1>
+  <div class="subtitle">昨日の自分を、少しだけ超えていこう。</div>
+
+  <section class="card">
+    <div class="card-title">TODAY'S PROGRESS</div>
+    <h2 id="progressText">0 / 3 完了</h2>
+    <div class="progress">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-title">TODAY'S TASK</div>
+
+    <label class="task">
+      <input type="checkbox" onchange="updateProgress()">
+      英単語を50語覚える
+    </label>
+
+    <label class="task">
+      <input type="checkbox" onchange="updateProgress()">
+      英文法を30分進める
+    </label>
+
+    <label class="task">
+      <input type="checkbox" onchange="updateProgress()">
+      世界史を30分勉強する
+    </label>
+  </section>
+
+  <section class="card">
+    <div class="card-title">STUDY TIMER</div>
+    <div class="timer" id="timer">00:00:00</div>
+    <div class="timer-buttons">
+      <button onclick="startTimer()">START</button>
+      <button class="secondary" onclick="stopTimer()">STOP</button>
+    </div>
+  </section>
+
+  <nav class="bottom">
+    <div>⌂<br>ホーム</div>
+    <div>◷<br>タイマー</div>
+    <div>▥<br>分析</div>
+    <div>▦<br>計画</div>
+  </nav>
+
+  <script>
+    let seconds = 0;
+    let interval = null;
+
+    function updateProgress() {
+      const tasks = document.querySelectorAll(
+        'input[type="checkbox"]'
+      );
+      const done = [...tasks].filter(t => t.checked).length;
+      const percent = done / tasks.length * 100;
+
+      document.getElementById("progressText").textContent =
+        done + " / " + tasks.length + " 完了";
+
+      document.getElementById("progressBar").style.width =
+        percent + "%";
+    }
+
+    function startTimer() {
+      if (interval) return;
+
+      interval = setInterval(() => {
+        seconds++;
+
+        const h = String(Math.floor(seconds / 3600)).padStart(2, "0");
+        const m = String(Math.floor(seconds % 3600 / 60)).padStart(2, "0");
+        const s = String(seconds % 60).padStart(2, "0");
+
+        document.getElementById("timer").textContent =
+          h + ":" + m + ":" + s;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(interval);
+      interval = null;
+    }
+  </script>
+
+</body>
+</html>
