@@ -297,6 +297,22 @@ h3{font-size:14px;margin:0 0 13px}
  </div>
  <p class="small">学習データはログイン中のアカウントに紐づいて保存されます。</p>
 </section>
+<!-- ADMIN PAGE -->
+<section id="admin" class="page">
+  <div class="eyebrow">ADMINISTRATION</div>
+  <h1>運営者専用</h1>
+
+  <div class="card">
+    <h3>退会申請管理</h3>
+    <p class="small">ユーザーから届いた退会申請を確認できます。</p>
+    <button class="primary full" onclick="loadDeletionRequests()">
+      申請一覧を更新
+    </button>
+    <div id="deletion-request-list">
+      <p class="small">まだ読み込まれていません。</p>
+    </div>
+  </div>
+</section>
 </main>
 
 <nav class="nav">
