@@ -287,7 +287,11 @@ h3{font-size:14px;margin:0 0 13px}
  <div class="card">
   <h3>アカウント</h3>
   <p class="small" id="account-email"></p>
-  <button class="secondary full" onclick="logout()">ログアウト</button>
+  <button class="secondary <button class="secondary full"
+  onclick="requestAccountDeletion()"
+  style="margin-bottom:10px;border:1px solid #a65b78;color:#ffb6ca;">
+  退会を申請する
+</button>full" onclick="logout()">ログアウト</button>
  </div>
  <p class="small">学習データはログイン中のアカウントに紐づいて保存されます。</p>
 </section>
@@ -2269,6 +2273,47 @@ openPage = function(id) {
     if(event.target === modal) window.spCloseLegal();
   });
 })();
+</script>
+<script>
+async function requestAccountDeletion() {
+  const confirmed = confirm(
+    "退会を申請しますか？\n\n申請後、運営者が確認します。"
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const { data, error: authError } =
+      await client.auth.getUser();
+
+    if (authError || !data.user) {
+      alert("ログイン状態を確認できませんでした。");
+      return;
+    }
+
+    const { error } = await client
+      .from("account_deletion_requests")
+      .insert({
+        user_id: data.user.id
+      });
+
+    if (error) {
+      if (error.code === "23505") {
+        alert("退会申請はすでに受け付けています。");
+      } else {
+        console.error(error);
+        alert("申請に失敗しました。時間をおいて再度お試しください。");
+      }
+      return;
+    }
+
+    alert("退会申請を受け付けました。運営者による確認をお待ちください。");
+
+  } catch (error) {
+    console.error(error);
+    alert("エラーが発生しました。");
+  }
+}
 </script>
 </body>
 </html>
