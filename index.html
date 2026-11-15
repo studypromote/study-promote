@@ -627,7 +627,218 @@ async function boot(){
   }
  });
 }
+ 
+/* ===== STUDY PROMOTE FIRST TUTORIAL ===== */
+
+const tutorialSteps = [
+  {
+    tag: "WELCOME",
+    title: "STUDY PROMOTEへようこそ。",
+    description: "毎日の勉強を記録し、自分の成長を見える化する学習管理アプリです。自分の目標に向かって、一歩ずつ進んでいきましょう。",
+    symbol: "✦"
+  },
+  {
+    tag: "STUDY PLANNER",
+    title: "学習計画を立てよう。",
+    description: "学習計画から、勉強する内容・日付・目標時間を設定できます。やるべきことを具体的にして、毎日の学習に活用しましょう。",
+    symbol: "▦"
+  },
+  {
+    tag: "DAILY MISSION",
+    title: "ToDoで行動を管理。",
+    description: "今日やることをタスクとして登録できます。完了したらチェックを付けて、達成状況を確認しましょう。",
+    symbol: "✓"
+  },
+  {
+    tag: "STUDY ANALYTICS",
+    title: "努力を振り返ろう。",
+    description: "学習記録ではタイマーや手動入力で勉強時間を保存できます。教材管理や学習分析も活用して、自分の学習を振り返りましょう。",
+    symbol: "◷"
+  }
+];
+
+let tutorialIndex = 0;
+
+function createTutorial() {
+  if (el("sp-tutorial")) return;
+
+  const style = document.createElement("style");
+  style.textContent = `
+    #sp-tutorial{
+      position:fixed;inset:0;z-index:1000;
+      background:rgba(7,5,12,.94);
+      backdrop-filter:blur(15px);
+      display:none;align-items:center;justify-content:center;
+      padding:22px;
+    }
+    #sp-tutorial-box{
+      width:100%;max-width:390px;
+      background:linear-gradient(145deg,#211532,#15111f);
+      border:1px solid #49315f;border-radius:25px;
+      padding:25px 21px;
+      box-shadow:0 20px 70px #0009;
+    }
+    #sp-tutorial-symbol{
+      height:105px;border-radius:18px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:48px;color:#c9a5ff;
+      background:radial-gradient(ellipse at center,#593487,#20152e);
+      margin:20px 0;
+    }
+    #sp-tutorial-title{
+      font-size:25px;line-height:1.5;margin:12px 0;
+    }
+    #sp-tutorial-description{
+      font-size:13px;line-height:2;color:#b9aec8;
+      min-height:100px;
+    }
+    #sp-tutorial-dots{
+      display:flex;gap:7px;margin:20px 0;
+    }
+    .sp-tutorial-dot{
+      height:5px;flex:1;border-radius:10px;
+      background:#382b48;
+    }
+    .sp-tutorial-dot.active{
+      background:#a66bff;
+    }
+    #sp-tutorial-actions{
+      display:flex;gap:9px;
+    }
+    #sp-tutorial-actions button{flex:1}
+  `;
+  document.head.appendChild(style);
+
+  const overlay = document.createElement("div");
+  overlay.id = "sp-tutorial";
+  overlay.innerHTML = `
+    <div id="sp-tutorial-box">
+      <div class="brand">STUDY <span>PROMOTE</span></div>
+      <div class="eyebrow" id="sp-tutorial-tag">WELCOME</div>
+      <div id="sp-tutorial-symbol">✦</div>
+      <h2 id="sp-tutorial-title"></h2>
+      <p id="sp-tutorial-description"></p>
+      <div id="sp-tutorial-dots"></div>
+      <div id="sp-tutorial-actions">
+        <button class="secondary" id="sp-tutorial-back">戻る</button>
+        <button class="primary" id="sp-tutorial-next">次へ</button>
+      </div>
+      <button class="secondary full" id="sp-tutorial-skip"
+        style="margin-top:12px;background:transparent;color:#a99ab9">
+        スキップ
+      </button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  el("sp-tutorial-back").onclick = () => {
+    if (tutorialIndex > 0) {
+      tutorialIndex--;
+      renderTutorial();
+    }
+  };
+
+  el("sp-tutorial-next").onclick = () => {
+    if (tutorialIndex < tutorialSteps.length - 1) {
+      tutorialIndex++;
+      renderTutorial();
+    } else {
+      closeTutorial(true);
+    }
+  };
+
+  el("sp-tutorial-skip").onclick = () => closeTutorial(true);
+}
+
+function renderTutorial() {
+  const step = tutorialSteps[tutorialIndex];
+
+  el("sp-tutorial-tag").textContent = step.tag;
+  el("sp-tutorial-symbol").textContent = step.symbol;
+  el("sp-tutorial-title").textContent = step.title;
+  el("sp-tutorial-description").textContent = step.description;
+
+  el("sp-tutorial-dots").innerHTML =
+    tutorialSteps.map((_, i) =>
+      `<div class="sp-tutorial-dot ${i === tutorialIndex ? "active" : ""}"></div>`
+    ).join("");
+
+  el("sp-tutorial-back").style.visibility =
+    tutorialIndex === 0 ? "hidden" : "visible";
+
+  el("sp-tutorial-next").textContent =
+    tutorialIndex === tutorialSteps.length - 1
+      ? "始める"
+      : "次へ";
+
+  el("sp-tutorial-skip").style.display =
+    tutorialIndex === tutorialSteps.length - 1 ? "none" : "block";
+}
+
+function showTutorial() {
+  createTutorial();
+  tutorialIndex = 0;
+  renderTutorial();
+  el("sp-tutorial").style.display = "flex";
+}
+
+function closeTutorial(markAsSeen) {
+  el("sp-tutorial").style.display = "none";
+
+  if (markAsSeen && user) {
+    try {
+      localStorage.setItem(
+        "sp_tutorial_seen_" + user.id,
+        "yes"
+      );
+    } catch (error) {
+      console.warn("Tutorial setting:", error);
+    }
+  }
+}
+
+function setupTutorialButton() {
+  const cards = el("profile").querySelectorAll(".card");
+  const accountCard = cards[cards.length - 1];
+
+  if (!accountCard || el("sp-tutorial-review")) return;
+
+  const button = document.createElement("button");
+  button.id = "sp-tutorial-review";
+  button.className = "secondary full";
+  button.style.marginTop = "10px";
+  button.textContent = "チュートリアルをもう一度見る";
+  button.onclick = showTutorial;
+
+  accountCard.appendChild(button);
+}
+
+/* 初回ログイン後にチュートリアルを表示 */
+const originalStartApp = startApp;
+
+startApp = async function() {
+  await originalStartApp();
+
+  createTutorial();
+  setupTutorialButton();
+
+  let seen = false;
+
+  try {
+    seen = localStorage.getItem(
+      "sp_tutorial_seen_" + user.id
+    ) === "yes";
+  } catch (error) {
+    console.warn("Tutorial setting:", error);
+  }
+
+  if (!seen) {
+    showTutorial();
+  }
+};
+
 boot();
+
 </script>
 </body>
 </html>
