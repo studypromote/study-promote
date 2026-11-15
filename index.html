@@ -2314,7 +2314,7 @@ async function loadDeletionRequests(){
  list.innerHTML='<p class="small">読み込み中...</p>';
 
  try{
-  const {data,isAdminError}=await client.rpc("is_admin");
+  const {data,error:isAdminError}=await client.rpc("is_admin");
 
   if(isAdminError||data!==true){
    list.innerHTML='<p class="small">管理者権限がありません。</p>';
