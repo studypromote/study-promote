@@ -430,7 +430,87 @@ async function safeLoad(){
  }
 }
 async function refresh(){await safeLoad();}
+const DEFAULT_SUBJECTS = [
+ "現代の国語",
+ "言語文化",
+ "論理国語",
+ "文学国語",
+ "国語表現",
+ "古典探究",
+ "地理総合",
+ "地理探究",
+ "歴史総合",
+ "日本史探究",
+ "世界史探究",
+ "公共",
+ "倫理",
+ "政治・経済",
+ "数学Ⅰ",
+ "数学Ⅱ",
+ "数学Ⅲ",
+ "数学A",
+ "数学B",
+ "数学C",
+ "物理基礎",
+ "物理",
+ "化学基礎",
+ "化学",
+ "生物基礎",
+ "生物",
+ "地学基礎",
+ "地学",
+ "英語コミュニケーションⅠ",
+ "英語コミュニケーションⅡ",
+ "英語コミュニケーションⅢ",
+ "論理・表現Ⅰ",
+ "論理・表現Ⅱ",
+ "論理・表現Ⅲ",
+ "その他外国語",
+ "保健",
+ "体育",
+ "音楽Ⅰ",
+ "音楽Ⅱ",
+ "音楽Ⅲ",
+ "美術Ⅰ",
+ "美術Ⅱ",
+ "美術Ⅲ",
+ "工芸Ⅰ",
+ "工芸Ⅱ",
+ "工芸Ⅲ",
+ "書道Ⅰ",
+ "書道Ⅱ",
+ "書道Ⅲ",
+ "家庭基礎",
+ "家庭総合",
+ "情報Ⅰ",
+ "情報Ⅱ",
+ "総合的な探究の時間",
+ "学校設定科目",
+ "その他"
+];
 
+async function ensureDefaultSubjects(){
+ const {data:existing,error:readError}=await client
+  .from("subjects")
+  .select("name")
+  .eq("user_id",user.id);
+
+ if(readError)throw readError;
+
+ const existingNames=new Set((existing||[]).map(s=>s.name));
+
+ const missing=DEFAULT_SUBJECTS
+  .filter(name=>!existingNames.has(name))
+  .map(name=>({user_id:user.id,name}));
+
+ if(missing.length===0)return;
+
+ const {error}=await client
+  .from("subjects")
+  .insert(missing);
+
+ if(error)throw error;
+}
 async function startApp(){
  el("auth").style.display="none";el("app").style.display="block";
  el("header-date").textContent=new Date().toLocaleDateString("ja-JP",{month:"long",day:"numeric",weekday:"short"});
