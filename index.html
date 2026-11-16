@@ -886,10 +886,14 @@ function pauseTimer(){
   focusElapsed=getFocusElapsed();
   stopTicker();
   focusPaused=true;
+
   el("timer-pause").textContent="再開";
+  el("focus-screen-pause").textContent="再開";
   el("timer-start").textContent="PAUSED";
+
   saveFocusState();
   updateTimer();
+
  }else if(focusPaused){
   startTimer();
  }
