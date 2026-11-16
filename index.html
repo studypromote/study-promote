@@ -580,8 +580,23 @@ async function deletePlan(id){
 }
 
 function fillSubjects(){
- const options='<option value="">教科を選択（任意）</option>'+subjects.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");
- ["timer-subject","manual-subject","material-subject","plan-subject"].forEach(id=>el(id).innerHTML=options);
+ const options='<option value="">教科を選択（任意）</option>'+
+ DEFAULT_SUBJECTS.map(name=>{
+  const s=subjects.find(item=>item.name===name);
+  return s
+   ? `<option value="${s.id}">${esc(s.name)}</option>`
+   : "";
+ }).join("");
+
+ ["timer-subject","manual-subject","material-subject","plan-subject"]
+ .forEach(id=>{
+  const select=el(id);
+  const previousValue=select.value;
+  select.innerHTML=options;
+  if([...select.options].some(o=>o.value===previousValue)){
+   select.value=previousValue;
+  }
+ });
 }
 function renderSubjects(){
  const names=subjects.map(s=>s.name);
