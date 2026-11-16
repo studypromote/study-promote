@@ -212,16 +212,36 @@ h3{font-size:14px;margin:0 0 13px}
 <!-- STUDY -->
 <section id="study" class="page">
  <div class="eyebrow">FOCUS MODE</div><h1>学習記録</h1>
- <div class="timer-panel">
+
+<div class="timer-panel">
   <div class="eyebrow" style="text-align:center">FOCUS SESSION</div>
+
   <select id="timer-subject" style="margin-top:17px"></select>
-  <div class="timer-display" id="timer-display">00:00:00</div>
-  <div class="actions">
-   <button class="primary" id="timer-start" onclick="startTimer()">START</button>
-   <button class="secondary" onclick="stopTimer()">STOP & SAVE</button>
+
+  <div style="display:flex;gap:8px;margin-top:18px">
+    <button class="secondary" onclick="setTimerPreset(10)">10分</button>
+    <button class="secondary" onclick="setTimerPreset(30)">30分</button>
+    <button class="secondary" onclick="setTimerPreset(60)">60分</button>
   </div>
-  <p class="small" style="text-align:center;margin-top:13px">集中した時間を記録しよう。</p>
- </div>
+
+  <label style="display:block;margin-top:16px">自由に時間を設定（分）</label>
+  <input id="timer-custom" type="number" min="1" max="600" placeholder="例：45">
+
+  <button class="secondary full" onclick="setCustomTimer()">時間を設定</button>
+
+  <div class="timer-display" id="timer-display">00:30:00</div>
+
+  <div class="actions">
+    <button class="primary" id="timer-start" onclick="startTimer()">START</button>
+    <button class="secondary" id="timer-pause" onclick="pauseTimer()">一時停止</button>
+    <button class="secondary" onclick="stopTimer()">終了・保存</button>
+  </div>
+
+  <p class="small" style="text-align:center;margin-top:13px">
+    集中した時間を記録しよう。
+  </p>
+</div>
+
  <div class="card">
   <h3>手動で記録する</h3>
   <label>教科</label><select id="manual-subject"></select>
