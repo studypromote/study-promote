@@ -340,6 +340,59 @@ h3{font-size:14px;margin:0 0 13px}
 </section>
 </main>
 
+<!-- FULLSCREEN FOCUS MODE -->
+<div id="focus-screen" style="
+ display:none;
+ position:fixed;
+ inset:0;
+ z-index:9999;
+ background:#101827;
+ color:#ffffff;
+ padding:calc(env(safe-area-inset-top) + 30px) 24px calc(env(safe-area-inset-bottom) + 30px);
+ box-sizing:border-box;
+ flex-direction:column;
+ align-items:center;
+ justify-content:center;
+ text-align:center;
+">
+ <div style="font-size:12px;letter-spacing:3px;color:#9ca3af;">
+  STUDY PROMOTE
+ </div>
+
+ <h1 style="font-size:32px;margin:45px 0 25px;">
+  集中中
+ </h1>
+
+ <div id="focus-screen-time" style="
+  font-size:clamp(48px,15vw,76px);
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:2px;
+ ">
+  00:30:00
+ </div>
+
+ <p style="color:#9ca3af;margin-top:24px;">
+  今、この時間に全力を。
+ </p>
+
+ <div style="display:flex;gap:12px;width:100%;max-width:320px;margin-top:55px;">
+  <button class="secondary" id="focus-screen-pause"
+   onclick="pauseTimer()" style="flex:1;padding:16px;">
+   一時停止
+  </button>
+
+  <button class="primary"
+   onclick="stopTimer()" style="flex:1;padding:16px;">
+   終了・保存
+  </button>
+ </div>
+
+ <p style="font-size:11px;color:#64748b;margin-top:35px;">
+  STUDY PROMOTE FOCUS MODE
+ </p>
+</div>
+
 <nav class="nav">
  <button class="active" data-page="home" onclick="openPage('home')"><span class="symbol">⌂</span>ホーム</button>
  <button data-page="plans" onclick="openPage('plans')"><span class="symbol">▦</span>計画</button>
