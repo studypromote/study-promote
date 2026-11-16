@@ -982,6 +982,8 @@ function restoreFocusTimer(){
   const state=JSON.parse(raw);
   if(!state||!Number.isFinite(state.duration)||state.duration<60){
    clearFocusState();
+   el("focus-screen").style.display="none";
+el("focus-screen-time").textContent=formatFocusTime(focusDuration);
    return;
   }
   focusDuration=state.duration;
