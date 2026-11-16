@@ -826,7 +826,15 @@ function stopTicker(){
 
 function updateTimer(){
  const remaining=Math.max(0,focusDuration-getFocusElapsed());
- el("timer-display").textContent=formatFocusTime(remaining);
+ const timeText=formatFocusTime(remaining);
+
+ el("timer-display").textContent=timeText;
+
+ const focusScreenTime=el("focus-screen-time");
+ if(focusScreenTime){
+  focusScreenTime.textContent=timeText;
+ }
+
  if(remaining<=0)finishFocusTimer();
 }
 
