@@ -829,6 +829,32 @@ function pauseTimer(){
  }
 }
 
+function playFocusAlarm(){
+ const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+ if(!AudioContextClass)return;
+
+ const audio=new AudioContextClass();
+ audio.resume().then(()=>{
+  [0,0.35,0.7].forEach(delay=>{
+   const oscillator=audio.createOscillator();
+   const gain=audio.createGain();
+
+   oscillator.type="sine";
+   oscillator.frequency.value=880;
+   gain.gain.setValueAtTime(0.001,audio.currentTime+delay);
+   gain.gain.exponentialRampToValueAtTime(0.2,audio.currentTime+delay+0.03);
+   gain.gain.exponentialRampToValueAtTime(0.001,audio.currentTime+delay+0.22);
+
+   oscillator.connect(gain);
+   gain.connect(audio.destination);
+   oscillator.start(audio.currentTime+delay);
+   oscillator.stop(audio.currentTime+delay+0.25);
+  });
+
+  setTimeout(()=>audio.close(),1500);
+ }).catch(error=>console.log("アラームを再生できませんでした",error));
+}
+
 async function finishFocusTimer(){
  if(focusSaving)return;
  focusSaving=true;
