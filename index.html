@@ -714,12 +714,13 @@ async function editMaterial(id,current){
  const {error}=await client.from("materials").update({progress}).eq("id",id);
  if(error){notify(error.message);return;}await refresh();
 }
+
 async function deleteMaterial(id){
  if(!confirm("この教材を削除しますか？"))return;
  const {error}=await client.from("materials").delete().eq("id",id);
- if(error){notify(error.message);return;}await refresh();
+ if(error){notify(error.message);return;}
+ await refresh();
 }
-
 
 let focusDuration = 1800;
 let focusElapsed = 0;
@@ -727,6 +728,28 @@ let focusRunStartedAt = null;
 let focusTicker = null;
 let focusPaused = false;
 let focusSaving = false;
+
+function focusStorageKey(){
+ return "studyPromoteFocusTimer_"+(user?.id||"");
+}
+
+function saveFocusState(){
+ if(!user?.id)return;
+ try{
+  localStorage.setItem(focusStorageKey(),JSON.stringify({
+   duration:focusDuration,
+   elapsed:getFocusElapsed(),
+   runStartedAt:focusRunStartedAt,
+   paused:focusPaused,
+   subject:el("timer-subject").value||""
+  }));
+ }catch(error){console.warn(error);}
+}
+
+function clearFocusState(){
+ try{localStorage.removeItem(focusStorageKey());}
+ catch(error){console.warn(error);}
+}
 
 function formatFocusTime(seconds){
  const h=Math.floor(seconds/3600);
@@ -749,14 +772,9 @@ function stopTicker(){
 }
 
 function updateTimer(){
- const elapsed=getFocusElapsed();
- const remaining=Math.max(0,focusDuration-elapsed);
-
+ const remaining=Math.max(0,focusDuration-getFocusElapsed());
  el("timer-display").textContent=formatFocusTime(remaining);
-
- if(remaining<=0){
-  finishFocusTimer();
- }
+ if(remaining<=0)finishFocusTimer();
 }
 
 function setTimerPreset(minutes){
@@ -766,37 +784,34 @@ function setTimerPreset(minutes){
  }
  focusDuration=minutes*60;
  focusElapsed=0;
+ saveFocusState();
  el("timer-display").textContent=formatFocusTime(focusDuration);
  notify(minutes+"分に設定しました。");
 }
 
 function setCustomTimer(){
  const minutes=Number(el("timer-custom").value);
-
  if(!Number.isInteger(minutes)||minutes<1||minutes>600){
   notify("1〜600分で設定してください。");
   return;
  }
-
  setTimerPreset(minutes);
 }
 
 function startTimer(){
  if(focusTicker)return;
-
  if(focusPaused){
   focusRunStartedAt=Date.now();
   focusPaused=false;
   focusTicker=setInterval(updateTimer,250);
   el("timer-pause").textContent="一時停止";
-  el("timer-start").textContent="RUNNING";
-  return;
+ }else{
+  focusElapsed=0;
+  focusRunStartedAt=Date.now();
+  focusTicker=setInterval(updateTimer,250);
  }
-
- focusElapsed=0;
- focusRunStartedAt=Date.now();
- focusTicker=setInterval(updateTimer,250);
  el("timer-start").textContent="RUNNING";
+ saveFocusState();
  updateTimer();
 }
 
@@ -807,6 +822,7 @@ function pauseTimer(){
   focusPaused=true;
   el("timer-pause").textContent="再開";
   el("timer-start").textContent="PAUSED";
+  saveFocusState();
   updateTimer();
  }else if(focusPaused){
   startTimer();
@@ -816,22 +832,19 @@ function pauseTimer(){
 async function finishFocusTimer(){
  if(focusSaving)return;
  focusSaving=true;
-
  const seconds=Math.min(focusDuration,getFocusElapsed());
  const minutes=Math.floor(seconds/60);
-
+ const subject=el("timer-subject").value||null;
  stopTicker();
  focusElapsed=0;
  focusPaused=false;
-
+ clearFocusState();
  el("timer-display").textContent=formatFocusTime(focusDuration);
  el("timer-start").textContent="START";
  el("timer-pause").textContent="一時停止";
-
  if(minutes>=1){
-  await saveSession(minutes,el("timer-subject").value||null,"タイマー学習");
+  await saveSession(minutes,subject,"タイマー学習");
  }
-
  notify("設定時間が終了しました！");
  focusSaving=false;
 }
@@ -841,24 +854,53 @@ async function stopTimer(){
   notify("タイマーは動いていません。");
   return;
  }
-
  const seconds=getFocusElapsed();
  const minutes=Math.floor(seconds/60);
-
+ const subject=el("timer-subject").value||null;
  stopTicker();
  focusElapsed=0;
  focusPaused=false;
-
+ clearFocusState();
  el("timer-display").textContent=formatFocusTime(focusDuration);
  el("timer-start").textContent="START";
  el("timer-pause").textContent="一時停止";
-
  if(minutes<1){
   notify("1分未満のため保存しませんでした。");
   return;
  }
+ await saveSession(minutes,subject,"タイマー学習");
+}
 
- await saveSession(minutes,el("timer-subject").value||null,"タイマー学習");
+function restoreFocusTimer(){
+ try{
+  const raw=localStorage.getItem(focusStorageKey());
+  if(!raw)return;
+  const state=JSON.parse(raw);
+  if(!state||!Number.isFinite(state.duration)||state.duration<60){
+   clearFocusState();
+   return;
+  }
+  focusDuration=state.duration;
+  focusElapsed=Number(state.elapsed)||0;
+  focusRunStartedAt=state.runStartedAt||null;
+  focusPaused=!!state.paused;
+  if(state.subject)el("timer-subject").value=state.subject;
+  if(focusRunStartedAt){
+   if(getFocusElapsed()>=focusDuration){
+    finishFocusTimer();
+    return;
+   }
+   focusTicker=setInterval(updateTimer,250);
+   el("timer-start").textContent="RUNNING";
+  }else if(focusPaused){
+   el("timer-start").textContent="PAUSED";
+   el("timer-pause").textContent="再開";
+  }
+  updateTimer();
+ }catch(error){
+  console.error(error);
+  clearFocusState();
+ }
 }
 
 async function manualRecord(){
