@@ -599,14 +599,56 @@ function fillSubjects(){
   }
  });
 }
+
+let showAllSubjects = false;
+
 function renderSubjects(){
- const names=subjects.map(s=>s.name);
- el("subject-chart").innerHTML=subjects.length?subjects.map(s=>{
-  const total=weeklySessions().filter(x=>x.subject_id===s.id).reduce((a,x)=>a+(Number(x.duration_minutes)||0),0);
-  const max=Math.max(1,...subjects.map(sub=>weeklySessions().filter(x=>x.subject_id===sub.id).reduce((a,x)=>a+(Number(x.duration_minutes)||0),0)));
-  return `<div class="subject-line"><span class="row-title" style="width:65px">${esc(s.name)}</span><div class="progress"><div style="width:${total/max*100}%"></div></div><strong>${total}分</strong></div>`;
- }).join(""):'<div class="empty">教科を追加すると分析に表示されます。</div>';
+ const week = weeklySessions();
+
+ const subjectData = subjects.map(s=>{
+  const total = week
+   .filter(x=>x.subject_id===s.id)
+   .reduce((a,x)=>a+(Number(x.duration_minutes)||0),0);
+
+  return {...s,total};
+ });
+
+ subjectData.sort((a,b)=>b.total-a.total);
+
+ const activeSubjects = subjectData.filter(s=>s.total>0);
+ const max = Math.max(1,...activeSubjects.map(s=>s.total));
+
+ const displayed = showAllSubjects
+  ? activeSubjects
+  : activeSubjects.slice(0,3);
+
+ el("subject-chart").innerHTML = activeSubjects.length
+  ? displayed.map(s=>`
+    <div class="subject-line">
+     <span class="row-title" style="width:65px">
+      ${esc(s.name)}
+     </span>
+     <div class="progress">
+      <div style="width:${s.total/max*100}%"></div>
+     </div>
+     <strong>${s.total}分</strong>
+    </div>
+   `).join("")+
+   (activeSubjects.length>3?`
+    <button class="secondary full"
+     onclick="toggleAllSubjects()"
+     style="margin-top:12px">
+     ${showAllSubjects?"閉じる ▲":"すべての教科を見る ▼"}
+    </button>
+   `:"")
+  :'<div class="empty">学習記録を追加すると表示されます。</div>';
 }
+
+function toggleAllSubjects(){
+ showAllSubjects = !showAllSubjects;
+ renderSubjects();
+}
+
 async function addSubject(){
  const name=prompt("追加する教科名");
  if(!name?.trim())return;
