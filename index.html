@@ -717,31 +717,147 @@ async function deleteMaterial(id){
  if(error){notify(error.message);return;}await refresh();
 }
 
+
+let focusDuration = 1800;
+let focusElapsed = 0;
+let focusRunStartedAt = null;
+let focusTicker = null;
+let focusPaused = false;
+let focusSaving = false;
+
+function formatFocusTime(seconds){
+ const h=Math.floor(seconds/3600);
+ const m=Math.floor(seconds%3600/60);
+ const s=seconds%60;
+ return [h,m,s].map(x=>String(x).padStart(2,"0")).join(":");
+}
+
+function getFocusElapsed(){
+ if(focusRunStartedAt){
+  return focusElapsed+Math.floor((Date.now()-focusRunStartedAt)/1000);
+ }
+ return focusElapsed;
+}
+
 function stopTicker(){
- if(timerTicker)clearInterval(timerTicker);
- timerTicker=null;timerStartedAt=null;
+ if(focusTicker)clearInterval(focusTicker);
+ focusTicker=null;
+ focusRunStartedAt=null;
 }
+
 function updateTimer(){
- if(!timerStartedAt)return;
- const seconds=Math.floor((Date.now()-timerStartedAt)/1000);
- el("timer-display").textContent=
-  [Math.floor(seconds/3600),Math.floor(seconds%3600/60),seconds%60]
-  .map(x=>String(x).padStart(2,"0")).join(":");
+ const elapsed=getFocusElapsed();
+ const remaining=Math.max(0,focusDuration-elapsed);
+
+ el("timer-display").textContent=formatFocusTime(remaining);
+
+ if(remaining<=0){
+  finishFocusTimer();
+ }
 }
+
+function setTimerPreset(minutes){
+ if(focusTicker||focusPaused){
+  notify("タイマーを終了してから時間を変更してください。");
+  return;
+ }
+ focusDuration=minutes*60;
+ focusElapsed=0;
+ el("timer-display").textContent=formatFocusTime(focusDuration);
+ notify(minutes+"分に設定しました。");
+}
+
+function setCustomTimer(){
+ const minutes=Number(el("timer-custom").value);
+
+ if(!Number.isInteger(minutes)||minutes<1||minutes>600){
+  notify("1〜600分で設定してください。");
+  return;
+ }
+
+ setTimerPreset(minutes);
+}
+
 function startTimer(){
- if(timerStartedAt)return;
- timerStartedAt=Date.now();
- timerTicker=setInterval(updateTimer,500);
+ if(focusTicker)return;
+
+ if(focusPaused){
+  focusRunStartedAt=Date.now();
+  focusPaused=false;
+  focusTicker=setInterval(updateTimer,250);
+  el("timer-pause").textContent="一時停止";
+  el("timer-start").textContent="RUNNING";
+  return;
+ }
+
+ focusElapsed=0;
+ focusRunStartedAt=Date.now();
+ focusTicker=setInterval(updateTimer,250);
  el("timer-start").textContent="RUNNING";
+ updateTimer();
 }
-async function stopTimer(){
- if(!timerStartedAt){notify("タイマーは動いていません。");return;}
- const seconds=Math.floor((Date.now()-timerStartedAt)/1000);
- stopTicker();el("timer-display").textContent="00:00:00";el("timer-start").textContent="START";
+
+function pauseTimer(){
+ if(focusTicker){
+  focusElapsed=getFocusElapsed();
+  stopTicker();
+  focusPaused=true;
+  el("timer-pause").textContent="再開";
+  el("timer-start").textContent="PAUSED";
+  updateTimer();
+ }else if(focusPaused){
+  startTimer();
+ }
+}
+
+async function finishFocusTimer(){
+ if(focusSaving)return;
+ focusSaving=true;
+
+ const seconds=Math.min(focusDuration,getFocusElapsed());
  const minutes=Math.floor(seconds/60);
- if(minutes<1){notify("1分未満のため保存しませんでした。");return;}
+
+ stopTicker();
+ focusElapsed=0;
+ focusPaused=false;
+
+ el("timer-display").textContent=formatFocusTime(focusDuration);
+ el("timer-start").textContent="START";
+ el("timer-pause").textContent="一時停止";
+
+ if(minutes>=1){
+  await saveSession(minutes,el("timer-subject").value||null,"タイマー学習");
+ }
+
+ notify("設定時間が終了しました！");
+ focusSaving=false;
+}
+
+async function stopTimer(){
+ if(!focusTicker&&!focusPaused){
+  notify("タイマーは動いていません。");
+  return;
+ }
+
+ const seconds=getFocusElapsed();
+ const minutes=Math.floor(seconds/60);
+
+ stopTicker();
+ focusElapsed=0;
+ focusPaused=false;
+
+ el("timer-display").textContent=formatFocusTime(focusDuration);
+ el("timer-start").textContent="START";
+ el("timer-pause").textContent="一時停止";
+
+ if(minutes<1){
+  notify("1分未満のため保存しませんでした。");
+  return;
+ }
+
  await saveSession(minutes,el("timer-subject").value||null,"タイマー学習");
 }
+
 async function manualRecord(){
  const minutes=Number(el("manual-minutes").value);
  if(!Number.isInteger(minutes)||minutes<1){notify("1分以上の学習時間を入力してください。");return;}
