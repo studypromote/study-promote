@@ -975,39 +975,7 @@ async function finishFocusTimer(){
 
  await saveSession(minutes,subject,"タイマー学習");
 }
-function restoreFocusTimer(){
- try{
-  const raw=localStorage.getItem(focusStorageKey());
-  if(!raw)return;
-  const state=JSON.parse(raw);
-  if(!state||!Number.isFinite(state.duration)||state.duration<60){
-   clearFocusState();
-   el("focus-screen").style.display="none";
-el("focus-screen-time").textContent=formatFocusTime(focusDuration);
-   return;
-  }
-  focusDuration=state.duration;
-  focusElapsed=Number(state.elapsed)||0;
-  focusRunStartedAt=state.runStartedAt||null;
-  focusPaused=!!state.paused;
-  if(state.subject)el("timer-subject").value=state.subject;
-  if(focusRunStartedAt){
-   if(getFocusElapsed()>=focusDuration){
-    finishFocusTimer();
-    return;
-   }
-   focusTicker=setInterval(updateTimer,250);
-   el("timer-start").textContent="RUNNING";
-  }else if(focusPaused){
-   el("timer-start").textContent="PAUSED";
-   el("timer-pause").textContent="再開";
-  }
-  updateTimer();
- }catch(error){
-  console.error(error);
-  clearFocusState();
- }
-}
+
 
 async function manualRecord(){
  const minutes=Number(el("manual-minutes").value);
@@ -1023,12 +991,60 @@ async function saveSession(duration_minutes,subject_id,memo){
  if(error){notify("記録できませんでした："+error.message);return;}
  await refresh();notify(`${duration_minutes}分の学習を記録しました。`);
 }
+function restoreFocusTimer(){
+ try{
+  const raw=localStorage.getItem(focusStorageKey());
+  if(!raw)return;
 
+  const state=JSON.parse(raw);
+
+  if(!state||!Number.isFinite(state.duration)||state.duration<60){
+   clearFocusState();
+   el("focus-screen").style.display="none";
+   el("focus-screen-time").textContent=formatFocusTime(focusDuration);
+   return;
+  }
+
+  focusDuration=state.duration;
+  focusElapsed=Number(state.elapsed)||0;
+  focusRunStartedAt=state.runStartedAt||null;
+  focusPaused=!!state.paused;
+
+  if(state.subject)el("timer-subject").value=state.subject;
+
+  // 保存されていた集中モードを全画面で復元
+  el("focus-screen").style.display="flex";
+
+  if(focusRunStartedAt){
+   if(getFocusElapsed()>=focusDuration){
+    finishFocusTimer();
+    return;
+   }
+
+   focusTicker=setInterval(updateTimer,250);
+   el("timer-start").textContent="RUNNING";
+   el("focus-screen-pause").textContent="一時停止";
+
+  }else if(focusPaused){
+   el("timer-start").textContent="PAUSED";
+   el("timer-pause").textContent="再開";
+   el("focus-screen-pause").textContent="再開";
+  }
+
+  updateTimer();
+
+ }catch(error){
+  console.error(error);
+  clearFocusState();
+  el("focus-screen").style.display="none";
+ }
+}
 function weeklySessions(){
  const start=new Date();start.setHours(0,0,0,0);start.setDate(start.getDate()-6);
  return sessions.filter(s=>new Date(s.studied_at)>=start);
 }
-function renderHistory(){
+
+ function renderHistory(){
  el("history-list").innerHTML=sessions.length?sessions.slice(0,12).map(s=>{
   const sub=subjects.find(x=>x.id===s.subject_id);
   return `<div class="history-row"><div class="row-main">
