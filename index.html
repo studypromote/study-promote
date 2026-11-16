@@ -365,7 +365,14 @@ async function openPage(id){
 }
 
 if(data!==true){
- notify("管理者権限がありません。");
+ const {data:authData,error:authError}=await client.auth.getUser();
+
+ if(authError||!authData.user){
+  notify("ログイン情報を取得できません。");
+  return;
+ }
+
+ notify("ログインID："+authData.user.id);
  return;
 }
  }
