@@ -861,6 +861,7 @@ function setCustomTimer(){
 
 function startTimer(){
  if(focusTicker)return;
+
  if(focusPaused){
   focusRunStartedAt=Date.now();
   focusPaused=false;
@@ -871,11 +872,15 @@ function startTimer(){
   focusRunStartedAt=Date.now();
   focusTicker=setInterval(updateTimer,250);
  }
+
+ // 全画面の集中モードを表示
+ el("focus-screen").style.display="flex";
+ el("focus-screen-pause").textContent="一時停止";
+
  el("timer-start").textContent="RUNNING";
  saveFocusState();
  updateTimer();
 }
-
 function pauseTimer(){
  if(focusTicker){
   focusElapsed=getFocusElapsed();
