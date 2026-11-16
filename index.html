@@ -2357,10 +2357,10 @@ async function loadDeletionRequests(){
    </div>
   `).join("");
 
- }catch(error){
+}catch(error){
   console.error(error);
-  list.innerHTML='<p class="small">読み込みに失敗しました。</p>';
- }
+  list.textContent = "読み込みエラー：" + (error.message || String(error));
+}
 }
  async function requestAccountDeletion() {
   const confirmed = confirm(
