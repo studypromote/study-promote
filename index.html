@@ -945,28 +945,36 @@ async function finishFocusTimer(){
  notify("設定時間が終了しました！");
  focusSaving=false;
 } 
-async function stopTimer(){
+ async function stopTimer(){
  if(!focusTicker&&!focusPaused){
   notify("タイマーは動いていません。");
   return;
  }
+
  const seconds=getFocusElapsed();
  const minutes=Math.floor(seconds/60);
  const subject=el("timer-subject").value||null;
+
  stopTicker();
  focusElapsed=0;
  focusPaused=false;
  clearFocusState();
+
+ // 全画面を閉じる
+ el("focus-screen").style.display="none";
+
  el("timer-display").textContent=formatFocusTime(focusDuration);
+ el("focus-screen-time").textContent=formatFocusTime(focusDuration);
  el("timer-start").textContent="START";
  el("timer-pause").textContent="一時停止";
+
  if(minutes<1){
   notify("1分未満のため保存しませんでした。");
   return;
  }
+
  await saveSession(minutes,subject,"タイマー学習");
 }
-
 function restoreFocusTimer(){
  try{
   const raw=localStorage.getItem(focusStorageKey());
