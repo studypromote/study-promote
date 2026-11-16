@@ -505,9 +505,12 @@ async function startApp(){
   notify("教科一覧の準備に失敗しました："+error.message);
  }
 
+ 
  await safeLoad();
  await loadProfile();
+ restoreFocusTimer();
 }
+
 async function loadProfile(){
  const {data,error}=await client.from("profiles").select("*").eq("id",user.id).maybeSingle();
  if(error){console.warn("Profile read:",error.message);return;}
