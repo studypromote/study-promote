@@ -871,10 +871,10 @@ async function finishFocusTimer(){
  if(minutes>=1){
   await saveSession(minutes,subject,"タイマー学習");
  }
+ playFocusAlarm();
  notify("設定時間が終了しました！");
  focusSaving=false;
-}
-
+} 
 async function stopTimer(){
  if(!focusTicker&&!focusPaused){
   notify("タイマーは動いていません。");
